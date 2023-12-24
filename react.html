@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script>
+    let globalId = 1;
+    // curr state
+    let todoState = [];
+    // prev state
+    let oldTodoState = [];
+
+    //this is react dom
+    function addTodo(obj) {
+      console.log('addtodo',obj)
+      const todoDiv = document.getElementById('todos')
+      console.log('todoDiv',todoDiv)
+      const task = `
+                  <div>
+                    title : ${obj.title}
+                  </div>
+                  <div>
+                    description : ${obj.description}
+                  </div>
+                  <button>
+                    ${obj.completed?'Done':'Mark as Done'}
+                  </button>
+                  <button onClick="deleteOne(event)">
+                    delete
+                  </button>
+      `
+      const newDiv = document.createElement('div')
+      newDiv.setAttribute('id',obj.id)
+      newDiv.innerHTML = task;
+      console.log('newDiv',newDiv)
+      todoDiv.appendChild(newDiv)
+    }
+
+    function deleteOne(event){
+      console.log(event,event.target,event.target.parentNode)
+      const idToRemove = event.target.parentNode.getAttribute('id')
+      
+      removeTodo(idToRemove)
+      //remove it from newTodos too
+      todoState = todoState.filter(item => item.id !== idToRemove)
+      updateState(todoState)
+    }
+    
+    function removeTodo(todoId) {
+      const element = document.getElementById(todoId);
+      element.parentNode.removeChild(element);
+    }
+
+    function updateTodo(oldTodo, newTodo) {
+      const element = document.getElementById(oldTodo.id);
+      element.children[0].innerHTML = newTodo.title;
+      element.children[1].innerHTML = newTodo.description;
+      element.children[0].innerHTML = newTodo.completed ? "Mark as done" : "Done";
+    }
+    // return true if was updated else false
+    function wasInternalsUpdated (oldObj,newObj){
+      // console.log('wasInternalsupdated',oldObj,newObj)
+      // might be some field was added
+      if (Object.keys(oldObj).length!==Object.keys(newObj).length)return true
+      //assumig feilds inside both the objects are same
+      // console.log('part2')
+      for (const feild in oldObj){
+        if(oldObj[feild]!==newObj[feild])return true;
+      }
+      return false;
+    }
+
+    function updateState(newTodos) {
+      // calculate the diff b/w newTodos and oldTodos.
+      // More specifically, find out what todos are - 
+      // 1. added
+      // 2. deleted
+      // 3. updated
+      const added = [];
+      const deleted = [];
+      const updated = [];
+      // calculate these 3 arrays
+      // call addTodo, removeTodo, updateTodo functions on each of the
+      // elements
+      const oldState = oldTodoState.reduce((acc,ob)=>{
+        acc[ob.id] = ob
+        return acc
+      },{})
+      // console.log('oldState',oldState)
+      const newState = newTodos.reduce((acc,ob)=>{
+        acc[ob.id] = ob
+        return acc
+      },{})
+      // console.log('newState',newState)
+
+      
+      // newTodos me jo hai agar old me nai hai to its added
+      // newTodos me jo hai agar old me bhi hai to its updated
+      // old me kuch hai jo me absent to some thing deleted
+
+      for (const newObj of newTodos){
+          if (newObj.id in oldState && wasInternalsUpdated(oldState[newObj.id] ,newObj)){
+            console.log('returned true')
+            //updated 
+            // here it can update the previous ones which are unchanged so we will check both objects what has been changed and what isnt
+          
+            console.log(newObj,newObj.id)
+            updateTodo(oldState[newObj.id], newObj)
+            updated.push([oldState[newObj.id],newObj])
+          }
+          // something was added
+          else if(!(newObj.id in oldState )){
+            added.push(newObj)
+            addTodo(newObj)
+          }
+      }
+      for (const oldObjId in oldState){
+        if (oldObjId in newState) continue;
+        else {
+          deleted.push(oldState.oldObjId)
+
+          // removeTodo(oldState.oldObjId)
+        }
+      }
+      console.log('added',added)
+      console.log('updated',updated)
+      console.log('deleted',deleted)
+
+      oldTodoState = [...newTodos];
+    }
+
+    function handleAddTodo() {
+      const title = document.getElementById("title").value;
+      const description = document.getElementById("description").value;
+      todoState.push({
+        title: title,
+        description: description,
+        completed : false, //default
+        id: globalId++,
+      })
+      updateState(todoState);
+    }
+
+  </script>
+</head>
+
+<body >
+  <input  type="text" id="title" placeholder="Todo title"></input> <br /><br />
+  <input type="text" id="description" placeholder="Todo description"></input> <br /><br />
+  <button onclick="handleAddTodo()">Add todo</button>
+  <br /> <br />
+
+  <div id="todos">
+
+  </div>
+</body>
+
+</html>
